@@ -1,14 +1,35 @@
 import React from "react";
 import Modal from "./Modal";
-import { Field, Form, Formik } from "formik";
-import { addDoc, collection } from "firebase/firestore";
+import { ErrorMessage, Field, Form, Formik } from "formik";
+import { addDoc, collection, doc, updateDoc } from "firebase/firestore";
 import { db } from "../config/firebase";
+import { toast } from "react-toastify";
+import * as Yup from 'yup';
 
-const AddAndUpdate = ({ isOpen, onClose }) => {
+const contactSchemaValidation = Yup.object().shape({
+  name: Yup.string().required('Name is Required'),
+  email: Yup.string().email('Invalid Email').required('Email is Required')
+})
+
+
+const AddAndUpdate = ({ isOpen, onClose, isUpdate, contact }) => {
   const addContact = async (contact) => {
     try {
       const contactRef = collection(db, "contacts");
       await addDoc(contactRef, contact);
+      onClose()
+      toast.success('Contact Added Successfully')
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const updateContact = async (contact, id) => {
+    try {
+      const contactRef = doc(db, "contacts", id);
+      await updateDoc(contactRef, contact);
+      onClose()
+      toast.success('Contact Updated Successfully')
     } catch (error) {
       console.log(error);
     }
@@ -17,13 +38,21 @@ const AddAndUpdate = ({ isOpen, onClose }) => {
   return (
     <div>
       <Modal isOpen={isOpen} onClose={onClose}>
-        <Formik
-          initialValues={{
-            name: "",
-            email: "",
-          }}
+        <Formik 
+        validationSchema={contactSchemaValidation}
+          initialValues={
+            isUpdate
+              ? {
+                  name: contact.name,
+                  email: contact.email,
+                }
+              : {
+                  name: "",
+                  email: "",
+                }
+          }
           onSubmit={(values) => {
-            addContact(values);
+            isUpdate ? updateContact(values, contact.id) : addContact(values);
           }}
         >
           <Form className="flex flex-col gap-3">
@@ -32,6 +61,9 @@ const AddAndUpdate = ({ isOpen, onClose }) => {
                 Name
               </label>
               <Field name="name" className="h-10 rounded-lg border" />
+              <div className="text-red-600 text-xs">
+                <ErrorMessage name="name"/>
+              </div>
             </div>
 
             <div className="flex flex-col gap-1">
@@ -43,13 +75,13 @@ const AddAndUpdate = ({ isOpen, onClose }) => {
                 type="email"
                 className="h-10 rounded-lg border"
               />
+              <div className="text-red-600 text-xs">
+                <ErrorMessage name="email"/>
+              </div>
             </div>
 
-            <button
-              type="submit"
-              className="self-end rounded border bg-orange px-3 py-1.5 text-black"
-            >
-              Add Contact
+            <button className="self-end rounded border bg-orange px-3 py-1.5 text-black">
+              {isUpdate ? "Update" : "Add"} Contact
             </button>
           </Form>
         </Formik>

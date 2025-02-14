@@ -5,6 +5,8 @@ import { HiOutlineUserCircle } from "react-icons/hi2";
 import { deleteDoc, doc } from "firebase/firestore";
 import { db } from "../config/firebase";
 import AddAndUpdate from "./AddAndUpdate";
+import useDisclose from '../hooks/useDisclose'
+import { toast } from "react-toastify";
 
 const ContactCard = ({ contact }) => {
 
@@ -14,6 +16,7 @@ const ContactCard = ({ contact }) => {
   const handleDelete = async (id) => {
     try {
       await deleteDoc(doc(db, "contacts", id));
+      toast.success('Contact Deleted Successfully')
     } catch (error) {
       console.log(error);
     }
@@ -35,14 +38,14 @@ const ContactCard = ({ contact }) => {
         </div>
 
         <div className="flex text-3xl">
-          <RiEditCircleLine />
+          <RiEditCircleLine onClick={onOpen} className="cursor-pointer"/>
           <IoMdTrash
             onClick={() => handleDelete(contact.id)}
             className="cursor-pointer text-orange"
           />
         </div>
       </div>
-      <AddAndUpdate isOpen={isOpen} onClose={onClose}/>
+      <AddAndUpdate contact={contact}  isUpdate isOpen={isOpen} onClose={onClose}/>
     </>
   );
 };
